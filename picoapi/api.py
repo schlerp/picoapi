@@ -35,7 +35,7 @@ def register_uservice():
         "port": os.getenv("API_PORT"),
         "healthcheck": {
             "url": "http://{}:{}{}".format(
-                os.getenv("API_TITLE"),
+                os.getenv("API_HOST"),
                 os.getenv("API_PORT"),
                 os.getenv("API_HEALTH_PATH"),
             ),
