@@ -1,36 +1,16 @@
 import os
+from typing import List
+
 import requests
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-import dotenv
-import uvicorn
-import functools
 
 
-dotenv.load_dotenv()
-
-
-app = FastAPI(
-    title=os.getenv("API_TITLE"),
-    description=os.getenv("API_DESCRIPTION"),
-    version=os.getenv("API_VERSION"),
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=os.getenv("API_CORS_ALLOW_ORIGINS", ["*"]),
-    allow_credentials=True,
-    allow_methods=os.getenv("API_CORS_ALLOW_METHODS", ["*"]),
-    allow_headers=os.getenv("API_CORS_ALLOW_HEADERS", ["*"]),
-)
-
-
-@app.on_event("startup")
 def register_uservice():
     uservice_definition = {
         "name": os.getenv("API_TITLE"),
-        "tags": os.getenv("API_TAGS").split(":") if os.getenv("API_TAGS") else [],
+        "tags": os.getenv("API_TAGS", "").split(":"),
         "host": os.getenv("API_HOST"),
         "port": os.getenv("API_PORT"),
         "healthcheck": {
@@ -46,15 +26,42 @@ def register_uservice():
     requests.put(os.getenv("API_REGISTER_PATH"), json=uservice_definition)
 
 
-@app.get("/health")
-async def index():
+async def healthcheck():
     return JSONResponse({"status": os.getenv("API_HEALTH_RESPONSE", "I am running!")})
 
 
-start_app = functools.partial(
-    uvicorn.run, app, host=os.getenv("API_BIND"), port=int(os.getenv("API_PORT"))
-)
+class PicoAPI(FastAPI):
+    def __init__(
+        self,
+        api_health_path=os.getenv("API_HEALTH_PATH"),
+        allow_credentials=True,
+        allow_origins: List[str] = [
+            x for x in os.getenv("API_CORS_ALLOW_ORIGINS", "*").split()
+        ],
+        allow_methods: List[str] = [
+            x for x in os.getenv("API_CORS_ALLOW_METHODS", "*").split()
+        ],
+        allow_headers: List[str] = [
+            x for x in os.getenv("API_CORS_ALLOW_HEADERS", "*").split()
+        ],
+        *args,
+        **kwargs
+    ) -> None:
 
-if __name__ == "__main__":
+        # call super class __init__
+        super().__init__(*args, **kwargs)
 
-    start_app()
+        # add the cors middleware
+        self.add_middleware(
+            CORSMiddleware,
+            allow_origins=allow_origins,
+            allow_credentials=allow_credentials,
+            allow_methods=allow_methods,
+            allow_headers=allow_headers,
+        )
+
+        # add the service registration event
+        self.router.on_event("startup", register_uservice)
+
+        # add the healthcheck route
+        self.add_api_route(api_health_path, healthcheck)

@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setuptools.setup(
     name="picoapi",
-    version="0.1.0",
+    version="0.1.3",
     author="Patrick Coffey",
     author_email="patrickcoffey91@gmail.com",
     description="An opinionated wrapper around FastAPI with custom microservice registration",
