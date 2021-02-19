@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setuptools.setup(
     name="picoapi",
-    version="0.1.3",
+    version="0.1.5",
     author="Patrick Coffey",
     author_email="patrickcoffey91@gmail.com",
     description="An opinionated wrapper around FastAPI with custom microservice registration",
@@ -19,11 +19,9 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "uvicorn",
         "pydantic",
         "fastapi",
         "requests",
-        "python-dotenv",
     ],
     python_requires=">=3.6",
 )
