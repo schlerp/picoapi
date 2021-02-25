@@ -1,11 +1,12 @@
 import setuptools
+import os
 
 with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setuptools.setup(
     name="picoapi",
-    version="0.1.5",
+    version=os.getenv("RELEASE_VERSION", "0.0.1"),
     author="Patrick Coffey",
     author_email="patrickcoffey91@gmail.com",
     description="An opinionated wrapper around FastAPI with custom microservice registration",

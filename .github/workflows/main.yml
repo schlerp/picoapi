@@ -1,0 +1,37 @@
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+name: Publish Release
+
+jobs:
+  build:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Build Package
+        run: |
+          export RELEASE_VERSION=${{ github.ref }}
+          python setup.py build sdist bdist_wheel
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Publish package to Private PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: ${{ secrets.PRIVATE_PYPI_USERNAME }}
+          password: ${{ secrets.PRIVATE_PYPI_PASSWORD }}
+          repository_url: ${{ secrets.PRIVATE_PYPI_URL }}
