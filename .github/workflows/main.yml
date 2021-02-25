@@ -21,6 +21,7 @@ jobs:
       - name: Build Package
         run: |
           export RELEASE_VERSION=${{ github.ref }}
+          python -m pip install --upgrade pip wheel
           python setup.py build sdist bdist_wheel
 
       - name: Publish package to PyPI
