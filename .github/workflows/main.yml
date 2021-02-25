@@ -20,7 +20,7 @@ jobs:
 
       - name: Build Package
         run: |
-          export RELEASE_VERSION=${{ github.ref }}
+          echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
           python -m pip install --upgrade pip wheel
           python setup.py build sdist bdist_wheel
 
