@@ -18,9 +18,12 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Build Package
+      - name: Set Version
         run: |
           echo "RELEASE_VERSION=$(echo ${GITHUB_REF:10})" >> $GITHUB_ENV
+
+      - name: Build Package
+        run: |
           python -m pip install --upgrade pip wheel
           python setup.py build sdist bdist_wheel
 
