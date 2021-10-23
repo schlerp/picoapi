@@ -79,7 +79,7 @@ class PicoAPI(FastAPI):
             # add service registration
             self.add_api_route("/register", self.add_service)
             self.add_api_route("/services/status", self.get_services_status)
-            self.add_api_route("/services/definition", self.get_services_status)
+            self.add_api_route("/services/definition", self.get_services_openapi)
 
         else:
             # add the service registration event
