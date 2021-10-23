@@ -31,7 +31,7 @@ def register_uservice():
         },
     }
 
-    requests.put(os.getenv("API_REGISTER_PATH"), json=uservice_definition)
+    requests.get(os.getenv("API_REGISTER_PATH"), json=uservice_definition)
 
 
 async def healthcheck():
@@ -53,6 +53,7 @@ class PicoAPI(FastAPI):
         allow_headers: List[str] = [
             x for x in os.getenv("API_CORS_ALLOW_HEADERS", "*").split()
         ],
+        on_startup = None,
         *args,
         **kwargs
     ) -> None:
@@ -82,7 +83,7 @@ class PicoAPI(FastAPI):
 
         else:
             # add the service registration event
-            self.router.on_event("startup", register_uservice)
+            self.on_startup = [ register_uservice() ]
 
     async def get_services_status(self):
         return JSONResponse(
