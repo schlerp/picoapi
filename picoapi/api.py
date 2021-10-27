@@ -31,17 +31,7 @@ def register_uservice():
         },
     }
 
-    # Check if service was registered
-    # if no register else raise logger info
-    existing_services = json.loads( requests.get(os.getenv("API_STATUS_PATH")).text )
-    if len(existing_services) == 0:
-        requests.get(os.getenv("API_REGISTER_PATH"), json=uservice_definition)
-        return
-    for service in existing_services:
-        if str(service["host"]) == str(uservice_definition["host"]) and str(service["port"]) == str(uservice_definition["port"]):
-            logger.info( "%s on http://%s:%s exist!" % ( uservice_definition["name"], uservice_definition["host"], uservice_definition["port"] ) )
-        else:    
-            requests.get(os.getenv("API_REGISTER_PATH"), json=uservice_definition)
+    requests.put(os.getenv("API_REGISTER_PATH"), json=uservice_definition)
 
 
 async def healthcheck():
@@ -63,15 +53,31 @@ class PicoAPI(FastAPI):
         allow_headers: List[str] = [
             x for x in os.getenv("API_CORS_ALLOW_HEADERS", "*").split()
         ],
-        on_startup = None,
-        openapi_tag: str = os.getenv("API_OPENAPI_TAG", "default"),
         *args,
         **kwargs
     ) -> None:
 
-        # call super class __init__
-        super().__init__(*args, **kwargs)
+        self.is_master = is_master
+        self.services = []
+        self.healthchecks = {}
+        self.add_api_route(api_health_path, healthcheck)
 
+        if self.is_master:
+            # call super class __init__
+            super().__init__(*args, **kwargs)
+            
+            # add service registration
+            self.add_api_route("/register", self.add_service, , methods=["PUT"])
+            self.add_api_route("/services/status", self.get_services_status)
+            self.add_api_route("/services/definition", self.get_services_openapi)
+
+        else:
+            # add the service registration event
+            kwargs["on_startup"] = [register_uservice, *[x for x in kwargs.get("on_startup")]] if kwargs.get("on_startup") else [register_uservice]
+            
+            # call super class __init__
+            super().__init__(*args, **kwargs)
+            
         # add the cors middleware
         self.add_middleware(
             CORSMiddleware,
@@ -79,22 +85,7 @@ class PicoAPI(FastAPI):
             allow_credentials=allow_credentials,
             allow_methods=allow_methods,
             allow_headers=allow_headers,
-        )
-
-        self.is_master = is_master
-        self.services = []
-        self.healthchecks = {}
-
-        if self.is_master:
-            # add service registration
-            self.add_api_route(api_health_path, healthcheck, include_in_schema=False)
-            self.add_api_route("/register", self.add_service, tags=[openapi_tag])
-            self.add_api_route("/services/status", self.get_services_status, tags=[openapi_tag])
-            self.add_api_route("/services/definition", self.get_services_openapi, tags=[openapi_tag])
-
-        else:
-            # add the service registration event
-            self.on_startup = [self.add_api_route(api_health_path, healthcheck, include_in_schema=False), register_uservice()]
+        )            
 
     async def get_services_status(self):
         return JSONResponse(
