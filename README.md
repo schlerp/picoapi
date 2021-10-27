@@ -1,7 +1,25 @@
-Picoapi
-=======
+PicoAPI Library
+===============
 
-A wrapper around FastAPI to simplify microservice creation. Very opinionated but also simple to fork if you would like to add your own version of service registration and configuration to FastAPI.
+The API Logic Library known as PicoAPI is sole API Logic library. It essentially reimplements the FastAPI interface from the Python FastAPI library with addition of some functions and logic that add some benefits for using FastAPI in a microservices architecture. The PicoAPI class itself allows for two distinct modes of operation, the supervisor (traditionally referred to as master) or worker (traditionally referred to as slave) configuration. Worker Microservices perform a task, they are told what to do and when to do it by a supervisor Microservice. The supervisor microservice knows which workers it can distribute tasks to because each worker microservice registers itself with a supervisor microservice on start.
+
+Registration of worker microservices describes the situation where upon start, the worker microservice sends a put request to a supervisor describing the following about itself:
+- Which IP microservice resides on.
+- Which port the microservice is bound to.
+- The worker microservices version.
+- The tags associated with this microservice, these allow the supervisor to know what types of work this microservice can perform and what forms of that work this microservice supports.
+- The healthcheck information.
+
+The concept of a healthcheck is simple, it describes the supervisor asking the worker if it is still running. For the supervisor to perform these checks, the worker microservices provide information about how and when to health check them. A healthcheck definition contains two items, the address to check, and the interval for this check to repeat.
+
+A PicoAPI supervisor adds the following functionality to the base FastAPI class:
+- Endpoints for the worker microservices to register.
+- Logic to perform a healthcheck.
+
+A PicoAPI worker adds the following functionality to the base FastAPI class:
+- Logic to register with a supervisor upon start.
+- An endpoint to return a healthcheck when the supervisor asks.
+
 
 Usage
 =====
