@@ -73,7 +73,7 @@ class PicoAPI(FastAPI):
 
         else:
             # add the service registration event
-            kwargs["on_startup"] = [register_uservice, *[x for x in kwargs.get("on_startup")]] if kwargs.get("on_startup") else [register_uservice]
+            kwargs["on_startup"] = [register_uservice, *[x for x in kwargs.get("on_startup")]] if kwargs.get("on_startup") else [register_uservice,]
             
             # call super class __init__
             super().__init__(*args, **kwargs)
