@@ -57,9 +57,26 @@ class PicoAPI(FastAPI):
         **kwargs
     ) -> None:
 
-        # call super class __init__
-        super().__init__(*args, **kwargs)
+        self.is_master = is_master
+        self.services = []
+        self.healthchecks = {}
 
+        if self.is_master:
+            # call super class __init__
+            super().__init__(*args, **kwargs)
+            
+            # add service registration
+            self.add_api_route("/register", self.add_service, methods=["PUT"])
+            self.add_api_route("/services/status", self.get_services_status)
+            self.add_api_route("/services/definition", self.get_services_openapi)
+
+        else:
+            # add the service registration event
+            kwargs["on_startup"] = [register_uservice, *[x for x in kwargs.get("on_startup")]] if kwargs.get("on_startup") else [register_uservice]
+            
+            # call super class __init__
+            super().__init__(*args, **kwargs)
+            
         # add the cors middleware
         self.add_middleware(
             CORSMiddleware,
@@ -67,22 +84,10 @@ class PicoAPI(FastAPI):
             allow_credentials=allow_credentials,
             allow_methods=allow_methods,
             allow_headers=allow_headers,
-        )
-
-        self.is_master = is_master
-        self.services = []
-        self.healthchecks = {}
+        )     
+            
+        # add healthcheck route     
         self.add_api_route(api_health_path, healthcheck)
-
-        if self.is_master:
-            # add service registration
-            self.add_api_route("/register", self.add_service)
-            self.add_api_route("/services/status", self.get_services_status)
-            self.add_api_route("/services/definition", self.get_services_status)
-
-        else:
-            # add the service registration event
-            self.router.on_event("startup", register_uservice)
 
     async def get_services_status(self):
         return JSONResponse(
