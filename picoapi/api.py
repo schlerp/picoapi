@@ -31,7 +31,7 @@ def register_uservice():
         },
     }
 
-    requests.get(os.getenv("API_REGISTER_PATH"), json=uservice_definition)
+    requests.put(os.getenv("API_REGISTER_PATH"), json=uservice_definition)
 
 
 async def healthcheck():
@@ -53,22 +53,9 @@ class PicoAPI(FastAPI):
         allow_headers: List[str] = [
             x for x in os.getenv("API_CORS_ALLOW_HEADERS", "*").split()
         ],
-        on_startup = None,
         *args,
         **kwargs
     ) -> None:
-
-        # call super class __init__
-        super().__init__(*args, **kwargs)
-
-        # add the cors middleware
-        self.add_middleware(
-            CORSMiddleware,
-            allow_origins=allow_origins,
-            allow_credentials=allow_credentials,
-            allow_methods=allow_methods,
-            allow_headers=allow_headers,
-        )
 
         self.is_master = is_master
         self.services = []
@@ -76,14 +63,29 @@ class PicoAPI(FastAPI):
         self.add_api_route(api_health_path, healthcheck)
 
         if self.is_master:
+            # call super class __init__
+            super().__init__(*args, **kwargs)
+            
             # add service registration
-            self.add_api_route("/register", self.add_service)
+            self.add_api_route("/register", self.add_service, , methods=["PUT"])
             self.add_api_route("/services/status", self.get_services_status)
             self.add_api_route("/services/definition", self.get_services_openapi)
 
         else:
             # add the service registration event
-            self.on_startup = [ register_uservice() ]
+            kwargs["on_startup"] = [register_uservice, *[x for x in kwargs.get("on_startup")]] if kwargs.get("on_startup") else [register_uservice]
+            
+            # call super class __init__
+            super().__init__(*args, **kwargs)
+            
+        # add the cors middleware
+        self.add_middleware(
+            CORSMiddleware,
+            allow_origins=allow_origins,
+            allow_credentials=allow_credentials,
+            allow_methods=allow_methods,
+            allow_headers=allow_headers,
+        )            
 
     async def get_services_status(self):
         return JSONResponse(
