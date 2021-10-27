@@ -60,13 +60,13 @@ class PicoAPI(FastAPI):
         self.is_master = is_master
         self.services = []
         self.healthchecks = {}
-        self.add_api_route(api_health_path, healthcheck)
 
         if self.is_master:
             # call super class __init__
             super().__init__(*args, **kwargs)
             
             # add service registration
+            self.add_api_route(api_health_path, healthcheck)
             self.add_api_route("/register", self.add_service, methods=["PUT"])
             self.add_api_route("/services/status", self.get_services_status)
             self.add_api_route("/services/definition", self.get_services_openapi)
@@ -77,6 +77,7 @@ class PicoAPI(FastAPI):
             
             # call super class __init__
             super().__init__(*args, **kwargs)
+            self.add_api_route(api_health_path, healthcheck)
             
         # add the cors middleware
         self.add_middleware(
